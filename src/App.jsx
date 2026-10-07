@@ -1,4 +1,4 @@
-import { DASHBOARD_URL } from './lib/urls.js'
+import { API_URL, DASHBOARD_URL } from './lib/urls.js'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { lazy, Suspense, useEffect } from 'react'
 import Landing from './pages/Landing'
@@ -26,9 +26,25 @@ function DashboardRedirect() {
   return <a href={(DASHBOARD_URL + "/login/")}>Continue to Gathos</a>
 }
 
+function ReferralAttribution() {
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase()
+    if (!code || !/^[A-Z0-9_-]{2,80}$/.test(code)) return
+
+    const controller = new AbortController()
+    fetch(`${API_URL}/api/affiliate/click?ref=${encodeURIComponent(code)}`, {
+      credentials: 'include',
+      signal: controller.signal,
+    }).catch(() => {})
+    return () => controller.abort()
+  }, [])
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ReferralAttribution />
       <Suspense fallback={<div className="min-h-screen bg-cream" />}>
         <Routes>
               <Route path="/" element={<Landing />} />

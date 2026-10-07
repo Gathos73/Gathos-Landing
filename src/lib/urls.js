@@ -1,5 +1,5 @@
 export function configuredUrls(env = {}) {
-  const site = (env.VITE_SITE_URL || 'https://gathos.com').replace(/\/+$/, '')
+  const site = (env.VITE_SITE_URL || 'https://gathos.live').replace(/\/+$/, '')
   const dashboard = (env.VITE_DASHBOARD_URL || 'https://dashboard.gathos.live').replace(/\/+$/, '')
   return { site, dashboard, api: (env.VITE_API_BASE_URL || site).replace(/\/+$/, ''), siteHost: new URL(site).host, dashboardHost: new URL(dashboard).host }
 }
