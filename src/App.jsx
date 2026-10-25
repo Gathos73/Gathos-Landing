@@ -1,5 +1,5 @@
 import { API_URL, DASHBOARD_URL } from './lib/urls.js'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { lazy, Suspense, useEffect } from 'react'
 import Landing from './pages/Landing'
 
@@ -27,17 +27,24 @@ function DashboardRedirect() {
 }
 
 function ReferralAttribution() {
+  const { search } = useLocation()
+
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase()
+    const code = new URLSearchParams(search).get('ref')?.trim().toUpperCase()
     if (!code || !/^[A-Z0-9_-]{2,80}$/.test(code)) return
 
-    const controller = new AbortController()
-    fetch(`${API_URL}/api/affiliate/click?ref=${encodeURIComponent(code)}`, {
+    // Keep this request alive when a visitor immediately follows a CTA to the
+    // dashboard. The backend owns validation, first-touch semantics and the
+    // shared-domain referral cookie.
+    void fetch(`${API_URL}/api/affiliate/click?ref=${encodeURIComponent(code)}`, {
       credentials: 'include',
-      signal: controller.signal,
-    }).catch(() => {})
-    return () => controller.abort()
-  }, [])
+      keepalive: true,
+    }).then((response) => {
+      if (!response.ok) throw new Error(`Referral capture failed (${response.status})`)
+    }).catch((error) => {
+      if (import.meta.env.DEV) console.warn(error)
+    })
+  }, [search])
   return null
 }
 

@@ -1,5 +1,5 @@
-const apiOrigin = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '')
+import { API_URL } from './urls.js'
 
 export function publicFetch(path, options) {
-  return fetch(`${apiOrigin}${path}`, options)
+  return fetch(`${API_URL}${path}`, options)
 }

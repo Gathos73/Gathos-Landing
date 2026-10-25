@@ -54,12 +54,16 @@ The manifest, service worker, and application bundles remain on the site origin.
   `CONTACT_INBOX` (default `hello@gathos.com`) with the sender as Reply-To.
   The backend needs working SMTP settings. This endpoint does not store an enquiry
   record or start checkout.
-- Affiliates: the partner CTA links to `https://affiliate.gathos.com`, which must
-  be hosted separately. This landing project does not include the affiliate portal
-  or capture `?ref=` attribution. The backend has affiliate endpoints and reads a
-  `gathos_ref` cookie during signup, but cross-domain referral handoff to
-  `dashboard.gathos.live` is not implemented here. A cookie on `gathos.com` cannot
-  provide that handoff to `gathos.live`.
+- Affiliates: a valid `?ref=CODE` visit calls the public affiliate click endpoint.
+  The backend records one first-touch click and sets an HTTP-only `gathos_ref`
+  cookie for `.gathos.live`, which is then consumed by email or social signup on
+  the dashboard. The affiliate portal is hosted separately at
+  `https://affiliate.gathos.live`.
+
+For the `.live` flow, deploy the backend at `https://api.gathos.live`, include
+`https://gathos.live` in credentialed CORS, and set `COOKIE_DOMAIN=.gathos.live`.
+OAuth callbacks must also use the `.live` API host; mixing an `api.gathos.com`
+callback with a `.gathos.live` referral cookie prevents social-signup attribution.
 
 The forms require the production API routing described above; deploying only the
 static files does not deploy these services. Both forms require an explicit
@@ -74,8 +78,9 @@ exist locally; remote availability is checked separately from the build. The old
 Set `VITE_SITE_URL` to the landing origin and `VITE_DASHBOARD_URL` to the
 dashboard origin in `.env.local` or the build environment. Trailing slashes are
 normalized. Signup redirects append `/login/` to the dashboard origin.
-`VITE_API_BASE_URL` also controls the API and OpenAPI URLs shown in examples;
-when empty, examples use the configured site origin.
+`VITE_API_BASE_URL` also controls the API and OpenAPI URLs shown in examples.
+When empty, production URLs default to the `api.` subdomain of the configured
+site origin (for example `https://api.gathos.live`).
 
 These settings apply to React content, canonical and social URLs, JSON-LD,
 `index.html`, and served/built public text files (sitemap, robots, LLM files,

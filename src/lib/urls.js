@@ -1,7 +1,11 @@
 export function configuredUrls(env = {}) {
   const site = (env.VITE_SITE_URL || 'https://gathos.live').replace(/\/+$/, '')
   const dashboard = (env.VITE_DASHBOARD_URL || 'https://dashboard.gathos.live').replace(/\/+$/, '')
-  return { site, dashboard, api: (env.VITE_API_BASE_URL || site).replace(/\/+$/, ''), siteHost: new URL(site).host, dashboardHost: new URL(dashboard).host }
+  const siteUrl = new URL(site)
+  const defaultApi = siteUrl.hostname === 'localhost' || siteUrl.hostname === '127.0.0.1'
+    ? site
+    : `${siteUrl.protocol}//api.${siteUrl.hostname.replace(/^www\./, '')}`
+  return { site, dashboard, api: (env.VITE_API_BASE_URL || defaultApi).replace(/\/+$/, ''), siteHost: siteUrl.host, dashboardHost: new URL(dashboard).host }
 }
 
 const urls = configuredUrls(import.meta.env)
