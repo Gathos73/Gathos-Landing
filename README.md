@@ -2,7 +2,7 @@
 
 Standalone React/Vite project extracted from `../gathos`. Includes the marketing
 homepage, blog, SEO pages, calculators, legal pages, and showcase assets. Sign-in,
-free-trial, and paid-plan CTAs go to https://dashboard.gathos.live/login/.
+free-trial, and paid-plan CTAs go to https://dashboard.gathos.com/login/.
 Legacy `/login`, `/signup`, `/dashboard`, and `/business/checkout` paths also redirect
 there. Authentication and billing are owned by the separate dashboard project.
 
@@ -56,14 +56,14 @@ The manifest, service worker, and application bundles remain on the site origin.
   record or start checkout.
 - Affiliates: a valid `?ref=CODE` visit calls the public affiliate click endpoint.
   The backend records one first-touch click and sets an HTTP-only `gathos_ref`
-  cookie for `.gathos.live`, which is then consumed by email or social signup on
+  cookie for `.gathos.com`, which is then consumed by email or social signup on
   the dashboard. The affiliate portal is hosted separately at
-  `https://affiliate.gathos.live`.
+  `https://affiliate.gathos.com`.
 
-For the `.live` flow, deploy the backend at `https://api.gathos.live`, include
-`https://gathos.live` in credentialed CORS, and set `COOKIE_DOMAIN=.gathos.live`.
-OAuth callbacks must also use the `.live` API host; mixing an `api.gathos.com`
-callback with a `.gathos.live` referral cookie prevents social-signup attribution.
+For the `.com` flow, deploy the backend at `https://api.gathos.com`, include
+`https://gathos.com` in credentialed CORS, and set `COOKIE_DOMAIN=.gathos.com`.
+OAuth callbacks must also use the `.com` API host so social-signup attribution
+receives the shared referral cookie.
 
 The forms require the production API routing described above; deploying only the
 static files does not deploy these services. Both forms require an explicit
@@ -80,7 +80,7 @@ dashboard origin in `.env.local` or the build environment. Trailing slashes are
 normalized. Signup redirects append `/login/` to the dashboard origin.
 `VITE_API_BASE_URL` also controls the API and OpenAPI URLs shown in examples.
 When empty, production URLs default to the `api.` subdomain of the configured
-site origin (for example `https://api.gathos.live`).
+site origin (for example `https://api.gathos.com`).
 
 These settings apply to React content, canonical and social URLs, JSON-LD,
 `index.html`, and served/built public text files (sitemap, robots, LLM files,

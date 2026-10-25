@@ -1,6 +1,6 @@
 export function configuredUrls(env = {}) {
-  const site = (env.VITE_SITE_URL || 'https://gathos.live').replace(/\/+$/, '')
-  const dashboard = (env.VITE_DASHBOARD_URL || 'https://dashboard.gathos.live').replace(/\/+$/, '')
+  const site = (env.VITE_SITE_URL || 'https://gathos.com').replace(/\/+$/, '')
+  const dashboard = (env.VITE_DASHBOARD_URL || 'https://dashboard.gathos.com').replace(/\/+$/, '')
   const siteUrl = new URL(site)
   const defaultApi = siteUrl.hostname === 'localhost' || siteUrl.hostname === '127.0.0.1'
     ? site
