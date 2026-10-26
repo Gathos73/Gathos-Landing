@@ -1,11 +1,25 @@
+function canonicalGathosUrl(value) {
+  const url = new URL(value)
+  const migratedHosts = {
+    'gathos.live': 'gathos.com',
+    'www.gathos.live': 'www.gathos.com',
+    'api.gathos.live': 'api.gathos.com',
+    'dashboard.gathos.live': 'dashboard.gathos.com',
+    'affiliate.gathos.live': 'affiliate.gathos.com',
+  }
+  url.hostname = migratedHosts[url.hostname.toLowerCase()] || url.hostname
+  return url.toString().replace(/\/+$/, '')
+}
+
 export function configuredUrls(env = {}) {
-  const site = (env.VITE_SITE_URL || 'https://gathos.com').replace(/\/+$/, '')
-  const dashboard = (env.VITE_DASHBOARD_URL || 'https://dashboard.gathos.com').replace(/\/+$/, '')
+  const site = canonicalGathosUrl(env.VITE_SITE_URL || 'https://gathos.com')
+  const dashboard = canonicalGathosUrl(env.VITE_DASHBOARD_URL || 'https://dashboard.gathos.com')
   const siteUrl = new URL(site)
   const defaultApi = siteUrl.hostname === 'localhost' || siteUrl.hostname === '127.0.0.1'
     ? site
     : `${siteUrl.protocol}//api.${siteUrl.hostname.replace(/^www\./, '')}`
-  return { site, dashboard, api: (env.VITE_API_BASE_URL || defaultApi).replace(/\/+$/, ''), siteHost: siteUrl.host, dashboardHost: new URL(dashboard).host }
+  const api = canonicalGathosUrl(env.VITE_API_BASE_URL || defaultApi)
+  return { site, dashboard, api, siteHost: siteUrl.host, dashboardHost: new URL(dashboard).host }
 }
 
 const urls = configuredUrls(import.meta.env)
