@@ -1,6 +1,6 @@
 import { DASHBOARD_URL, SITE_URL } from '../../lib/urls.js'
 import { useEffect } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import {
@@ -11,16 +11,19 @@ import {
   breadcrumbLd,
   faqLd,
 } from '../head.js'
-import { languages, getLanguage } from './data.js'
+import { usePublicItem, usePublicList } from '../../content/store.jsx'
+import ContentStatus from '../../content/ContentStatus.jsx'
+import NotFound from '../../pages/NotFound.jsx'
 
 export default function VoicePage() {
   const { slug } = useParams()
-  const page = getLanguage(slug)
+  const { item: page, loading: stillLoading, error } = usePublicItem('voice', slug)
+  const { items: languages } = usePublicList('voice', 1, 100)
   const url = page ? `${SITE_URL}/voice/${page.slug}` : ''
 
   useEffect(() => {
     if (!page) return
-    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url })
+    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url, image: page.socialImage })
     setJsonLd('gathos-voice-app-ld', softwareApplicationLd({ description: page.metaDesc, url }))
     setJsonLd('gathos-voice-bc-ld', breadcrumbLd([
       { name: 'Home', url: (SITE_URL) },
@@ -36,7 +39,8 @@ export default function VoicePage() {
     }
   }, [page, url])
 
-  if (!page) return <Navigate to="/" replace />
+  if (stillLoading || error) return <ContentStatus error={error} />
+  if (!page) return <NotFound />
 
   const otherLanguages = languages.filter((l) => l.slug !== page.slug).slice(0, 4)
 

@@ -1,6 +1,6 @@
 import { DASHBOARD_URL, SITE_URL } from '../../lib/urls.js'
 import { useEffect } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import {
@@ -11,7 +11,9 @@ import {
   breadcrumbLd,
   faqLd,
 } from '../head.js'
-import { alternatives, getAlternatives } from './data.js'
+import { usePublicItem, usePublicList } from '../../content/store.jsx'
+import ContentStatus from '../../content/ContentStatus.jsx'
+import NotFound from '../../pages/NotFound.jsx'
 
 // ItemList JSON-LD: tells Google + AI engines this is a ranked roundup,
 // which is the format that earns rich-result eligibility for "best X"
@@ -36,12 +38,13 @@ function itemListLd(page) {
 
 export default function AlternativesPage() {
   const { slug } = useParams()
-  const page = getAlternatives(slug)
+  const { item: page, loading: stillLoading, error } = usePublicItem('alternatives', slug)
+  const { items: alternatives } = usePublicList('alternatives', 1, 100)
   const url = page ? `${SITE_URL}/alternatives/${page.slug}` : ''
 
   useEffect(() => {
     if (!page) return
-    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url })
+    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url, image: page.socialImage })
     setJsonLd('gathos-alt-app-ld', softwareApplicationLd({ description: page.metaDesc, url }))
     setJsonLd('gathos-alt-bc-ld', breadcrumbLd([
       { name: 'Home', url: (SITE_URL) },
@@ -59,7 +62,8 @@ export default function AlternativesPage() {
     }
   }, [page, url])
 
-  if (!page) return <Navigate to="/" replace />
+  if (stillLoading || error) return <ContentStatus error={error} />
+  if (!page) return <NotFound />
 
   const related = alternatives.filter((a) => a.slug !== page.slug).slice(0, 3)
 

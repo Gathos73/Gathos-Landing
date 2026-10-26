@@ -1,0 +1,33 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/render.mjs": {
+      "includeFiles": "{dist,dist-ssr/server}/**",
+      "maxDuration": 60
+    },
+    "api/sitemap.mjs": {
+      "includeFiles": "dist-ssr/server/**",
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/sitemap.xml",
+      "dest": "/api/sitemap"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/api/.*",
+      "status": 404
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/render?path=$1"
+    }
+  ]
+}

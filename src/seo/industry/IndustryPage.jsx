@@ -1,6 +1,6 @@
 import { DASHBOARD_URL, SITE_URL } from '../../lib/urls.js'
 import { useEffect } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import {
@@ -11,16 +11,19 @@ import {
   breadcrumbLd,
   faqLd,
 } from '../head.js'
-import { industries, getIndustry } from './data.js'
+import { usePublicItem, usePublicList } from '../../content/store.jsx'
+import ContentStatus from '../../content/ContentStatus.jsx'
+import NotFound from '../../pages/NotFound.jsx'
 
 export default function IndustryPage() {
   const { slug } = useParams()
-  const page = getIndustry(slug)
+  const { item: page, loading: stillLoading, error } = usePublicItem('industry', slug)
+  const { items: industries } = usePublicList('industry', 1, 100)
   const url = page ? `${SITE_URL}/industry/${page.slug}` : ''
 
   useEffect(() => {
     if (!page) return
-    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url })
+    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url, image: page.socialImage })
     setJsonLd('gathos-ind-app-ld', softwareApplicationLd({ description: page.metaDesc, url }))
     setJsonLd('gathos-ind-bc-ld', breadcrumbLd([
       { name: 'Home', url: (SITE_URL) },
@@ -36,7 +39,8 @@ export default function IndustryPage() {
     }
   }, [page, url])
 
-  if (!page) return <Navigate to="/" replace />
+  if (stillLoading || error) return <ContentStatus error={error} />
+  if (!page) return <NotFound />
 
   const related = industries.filter((i) => i.slug !== page.slug).slice(0, 3)
 

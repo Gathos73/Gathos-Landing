@@ -33,6 +33,7 @@ export function publicUrls(env) {
       })
     },
     async writeBundle() {
+      if (config.build.ssr) return
       for (const file of files) {
         const output = path.resolve(config.root, config.build.outDir, file)
         const source = await readFile(output, 'utf8')

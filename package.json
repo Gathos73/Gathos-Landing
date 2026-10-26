@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:assets && vite build",
+    "build": "npm run check:assets && vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr/server",
     "lint": "eslint .",
     "preview": "vite preview",
-    "check:assets": "node scripts/check-showcase-assets.mjs"
+    "check:assets": "node scripts/check-showcase-assets.mjs",
+    "start": "node server.mjs",
+    "export:editorial": "node scripts/export-editorial.mjs",
+    "test:editorial": "node --test tests/editorial.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
@@ -31,5 +34,8 @@
     "vite": "^6.4.2",
     "postcss": "^8.5.10",
     "autoprefixer": "^10.5.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

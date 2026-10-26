@@ -1,11 +1,12 @@
 import { API_URL, SITE_URL } from '../lib/urls.js'
 import { assetUrl } from '../lib/assets.js'
-import { publicFetch } from '../lib/public-api.js'
-import { useEffect, useMemo, useState } from 'react'
-import { useParams, Link, Navigate } from 'react-router-dom'
+import { usePublicItem, usePublicList } from '../content/store.jsx'
+import ContentStatus from '../content/ContentStatus.jsx'
+import NotFound from './NotFound.jsx'
+import { useEffect, useMemo } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { posts, getPost } from '../blog/posts.jsx'
 import DynamicBody from '../blog/DynamicBody'
 
 const accentBadge = {
@@ -18,34 +19,14 @@ const accentBadge = {
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric',
+    month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC',
   })
 }
 
 export default function BlogPost() {
   const { slug } = useParams()
-  const staticPost = useMemo(() => getPost(slug), [slug])
-
-  // If the slug isn't in the static catalog, fetch from the dynamic API.
-  // Three states: undefined = checking, null = not found, object = found.
-  const [dynamicPost, setDynamicPost] = useState(staticPost ? null : undefined)
-  useEffect(() => {
-    if (staticPost) return
-    let cancelled = false
-    publicFetch('/api/blog/dynamic')
-      .then((r) => (r.ok ? r.json() : { posts: [] }))
-      .then((j) => {
-        if (cancelled) return
-        const found = (j.posts || []).find((p) => p.slug === slug)
-        setDynamicPost(found || null)
-      })
-      .catch(() => { if (!cancelled) setDynamicPost(null) })
-    return () => { cancelled = true }
-  }, [slug, staticPost])
-
-  const post = staticPost || dynamicPost
-  const isDynamic = !staticPost && !!dynamicPost
-  const stillLoading = !staticPost && dynamicPost === undefined
+  const { item: post, loading: stillLoading, error } = usePublicItem('blog', slug)
+  const { items: posts } = usePublicList('blog', 1, 4)
 
   useEffect(() => {
     if (!post) return
@@ -63,10 +44,12 @@ export default function BlogPost() {
     // /og-image.png. Cached at Cloudflare edge for 24h.
     const ogTitle = encodeURIComponent(stripTags(post.ogTitle || post.title))
     const ogEyebrow = encodeURIComponent(post.eyebrow || 'Gathos · Blog')
-    const ogImage = `${API_URL}/og/og.svg?title=${ogTitle}&eyebrow=${ogEyebrow}`
+    const ogImage = post.socialImage || `${API_URL}/og/og.svg?title=${ogTitle}&eyebrow=${ogEyebrow}`
     setMeta('og:image', ogImage, true)
     setMeta('twitter:card', 'summary_large_image')
     setMeta('twitter:image', ogImage)
+    setMeta('twitter:title', seoTitle)
+    setMeta('twitter:description', metaDescription)
     setCanonical(`${SITE_URL}/blog/${post.slug}`)
     setArticleJsonLd(post)
     if (post.faqs?.length) setFaqJsonLd(post.faqs)
@@ -92,20 +75,13 @@ export default function BlogPost() {
       return true
     })
     return ordered.slice(0, 3)
-  }, [post])
+  }, [post, posts])
 
-  if (stillLoading) {
-    return (
-      <div className="bg-cream min-h-screen flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-black/20 border-t-black/80 rounded-full animate-spin" />
-      </div>
-    )
-  }
-  if (!post) return <Navigate to="/blog" replace />
-
-  // Static posts ship a JSX `body` function. Dynamic posts ship a
-  // `sections` array that DynamicBody walks.
-  const Body = isDynamic ? () => <DynamicBody post={post} /> : post.body
+  if (stillLoading || error) return <ContentStatus error={error} />
+  if (!post) return <NotFound />
+  const Body = () => post.bodyHtml
+    ? <div dangerouslySetInnerHTML={{ __html: post.bodyHtml }} />
+    : <DynamicBody post={post} />
 
   return (
     <div className="bg-cream min-h-screen">
@@ -124,7 +100,7 @@ export default function BlogPost() {
               {post.eyebrow}
             </span>
             <span className="text-[0.78rem] text-warm-silver font-mono">
-              {formatDate(post.publishedAt)} · {post.readMinutes} min read
+              {post.publishedAt ? formatDate(post.publishedAt) : 'Draft'} · {post.readMinutes || 1} min read
             </span>
           </div>
 
@@ -265,7 +241,7 @@ function setArticleJsonLd(post) {
       name: 'Gathos',
       logo: { '@type': 'ImageObject', url: 'https://assets.vividai.in/icon-512.png' },
     },
-    image: 'https://assets.vividai.in/og-image.png',
+    image: post.socialImage || `${API_URL}/og/og.svg?${new URLSearchParams({ title: stripTags(post.ogTitle || post.title), eyebrow: post.eyebrow || 'Gathos · Blog' })}`,
     mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}/blog/${post.slug}` },
     keywords: post.keywords || post.eyebrow,
   }

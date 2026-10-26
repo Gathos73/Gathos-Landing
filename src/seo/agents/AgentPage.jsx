@@ -1,6 +1,6 @@
 import { DASHBOARD_URL, SITE_URL } from '../../lib/urls.js'
 import { useEffect } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import {
@@ -11,17 +11,20 @@ import {
   breadcrumbLd,
   faqLd,
 } from '../head.js'
-import { agents, getAgent } from './data.js'
-import { getSkill } from '../skills/data.js'
+import { usePublicItem, usePublicList } from '../../content/store.jsx'
+import ContentStatus from '../../content/ContentStatus.jsx'
+import NotFound from '../../pages/NotFound.jsx'
 
 export default function AgentPage() {
   const { slug } = useParams()
-  const page = getAgent(slug)
+  const { items: skills } = usePublicList('skill', 1, 100)
+  const { item: page, loading: stillLoading, error } = usePublicItem('agent', slug)
+  const { items: agents } = usePublicList('agent', 1, 100)
   const url = page ? `${SITE_URL}/for/${page.slug}` : ''
 
   useEffect(() => {
     if (!page) return
-    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url })
+    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url, image: page.socialImage })
     setJsonLd('gathos-agent-app-ld', softwareApplicationLd({ description: page.metaDesc, url }))
     setJsonLd('gathos-agent-bc-ld', breadcrumbLd([
       { name: 'Home', url: (SITE_URL) },
@@ -37,11 +40,12 @@ export default function AgentPage() {
     }
   }, [page, url])
 
-  if (!page) return <Navigate to="/" replace />
+  if (stillLoading || error) return <ContentStatus error={error} />
+  if (!page) return <NotFound />
 
   const otherAgents = agents.filter((a) => a.slug !== page.slug)
   const topSkillCards = (page.topSkills || [])
-    .map((s) => ({ slug: s.slug, title: s.title, meta: getSkill(s.slug) }))
+    .map((s) => ({ slug: s.slug, title: s.title, meta: skills.find(item => item.slug === s.slug) }))
     .filter((s) => s.meta)
 
   return (

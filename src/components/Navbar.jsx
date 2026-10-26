@@ -7,8 +7,8 @@ const links = [
   { label: 'APIs', id: 'apis' },
   { label: 'Docs', href: (DASHBOARD_URL + "/docs/") },
   { label: 'Use Cases', href: '/industry' },
-  { label: 'Skills', id: 'skills' },
-  { label: 'Compare', id: 'compare' },
+  { label: 'Skills', href: '/skills' },
+  { label: 'Compare', href: '/compare' },
   { label: 'Pricing', id: 'pricing' },
   // External-style link kept in the same array; href is honored when set
   // because `handleNavClick` short-circuits non-anchor entries.

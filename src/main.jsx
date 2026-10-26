@@ -1,13 +1,12 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+const root = document.getElementById('root')
+const application = <StrictMode><App /></StrictMode>
+if (window.__GATHOS_CONTENT__) hydrateRoot(root, application)
+else createRoot(root).render(application)
 
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
@@ -18,7 +17,7 @@ if ('serviceWorker' in navigator) {
 
 // Analytics is optional and only loaded when a valid tag is configured.
 const gaId = import.meta.env.VITE_GA_ID
-if (/^(G-|UA-|GT-)[A-Z0-9]+$/.test(gaId || '') && !document.cookie.includes('ga-optout=1')) {
+if (!window.location.pathname.startsWith('/preview/') && /^(G-|UA-|GT-)[A-Z0-9]+$/.test(gaId || '') && !document.cookie.includes('ga-optout=1')) {
   const script = document.createElement('script')
   script.async = true
   script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`

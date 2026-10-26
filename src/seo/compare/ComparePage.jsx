@@ -1,7 +1,6 @@
 import { API_URL, DASHBOARD_URL, SITE_URL } from '../../lib/urls.js'
-import { publicFetch } from '../../lib/public-api.js'
-import { useEffect, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import Footer from '../../components/Footer'
 import {
@@ -12,34 +11,15 @@ import {
   breadcrumbLd,
   faqLd,
 } from '../head.js'
-import { compares, getCompare } from './data.js'
-import { skills } from '../skills/data.js'
+import { usePublicItem, usePublicList } from '../../content/store.jsx'
+import ContentStatus from '../../content/ContentStatus.jsx'
+import NotFound from '../../pages/NotFound.jsx'
 
 export default function ComparePage() {
   const { slug } = useParams()
-  const staticPage = getCompare(slug)
-
-  // Dynamic compare pages live in the content_drafts table, authored
-  // via the admin Content Generator. Three states: undefined = checking,
-  // null = not found anywhere, object = found dynamically. If the slug
-  // is in the static catalogue we never bother fetching.
-  const [dynamicPage, setDynamicPage] = useState(staticPage ? null : undefined)
-  useEffect(() => {
-    if (staticPage) return
-    let cancelled = false
-    publicFetch('/api/compare/dynamic')
-      .then((r) => (r.ok ? r.json() : { pages: [] }))
-      .then((j) => {
-        if (cancelled) return
-        const found = (j.pages || []).find((p) => p.slug === slug)
-        setDynamicPage(found || null)
-      })
-      .catch(() => { if (!cancelled) setDynamicPage(null) })
-    return () => { cancelled = true }
-  }, [slug, staticPage])
-
-  const page = staticPage || dynamicPage
-  const stillLoading = !staticPage && dynamicPage === undefined
+  const { items: skills } = usePublicList('skill', 1, 4)
+  const { item: page, loading: stillLoading, error } = usePublicItem('compare', slug)
+  const { items: compares } = usePublicList('compare', 1, 100)
   const url = page ? `${SITE_URL}/compare/${page.slug}` : ''
 
   useEffect(() => {
@@ -51,7 +31,7 @@ export default function ComparePage() {
     const ogTitle = encodeURIComponent(`Gathos vs ${page.competitor}`)
     const ogEyebrow = encodeURIComponent(page.category || 'Comparison')
     const ogImage = `${API_URL}/og/og.svg?title=${ogTitle}&eyebrow=${ogEyebrow}`
-    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url, image: ogImage })
+    setPageMeta({ title: page.metaTitle, description: page.metaDesc, url, image: page.socialImage || ogImage })
     setJsonLd('gathos-cmp-app-ld', softwareApplicationLd({ description: page.metaDesc, url }))
     setJsonLd('gathos-cmp-bc-ld', breadcrumbLd([
       { name: 'Home', url: (SITE_URL) },
@@ -67,14 +47,8 @@ export default function ComparePage() {
     }
   }, [page, url])
 
-  if (stillLoading) {
-    return (
-      <div className="bg-cream min-h-screen flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-black/20 border-t-black/80 rounded-full animate-spin" />
-      </div>
-    )
-  }
-  if (!page) return <Navigate to="/" replace />
+  if (stillLoading || error) return <ContentStatus error={error} />
+  if (!page) return <NotFound />
 
   const related = compares.filter((c) => c.slug !== page.slug).slice(0, 3)
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gathos-landing-v2'
+const CACHE_NAME = 'gathos-landing-v3'
 const STATIC_ASSETS = ['/', '/manifest.json']
 
 self.addEventListener('install', (e) => {
@@ -20,6 +20,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   // Cache only same-origin GET assets; API requests always use the network.
   const url = new URL(e.request.url)
+  if (e.request.mode === 'navigate' || url.pathname.startsWith('/preview/')) return
   if (e.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return
 
   e.respondWith(

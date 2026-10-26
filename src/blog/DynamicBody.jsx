@@ -12,7 +12,7 @@
 // Unknown types are silently dropped (validateBlogDraft also filters
 // these on write, this is just defense in depth).
 
-import { Lead, H2, P, UL, Quote, Stat, CalloutSkill, FAQ, CTAFooter } from './prose'
+import { Lead, H2, P, UL, Quote, Stat, CalloutSkill, FAQ, CTAFooter, Code } from './prose'
 
 export default function DynamicBody({ post }) {
   const sections = Array.isArray(post?.sections) ? post.sections : []
@@ -20,6 +20,12 @@ export default function DynamicBody({ post }) {
     <>
       {sections.map((s, i) => {
         switch (s.type) {
+          case 'html':
+            return <div key={i} dangerouslySetInnerHTML={{ __html: s.html }} />
+          case 'image':
+            return <figure key={i} className="my-8"><img src={s.src} alt={s.alt} loading="lazy" className="rounded-2xl w-full" /></figure>
+          case 'code':
+            return <Code key={i}>{s.text}</Code>
           case 'lead':
             return <Lead key={i}>{s.text}</Lead>
           case 'h2':

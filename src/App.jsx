@@ -1,10 +1,13 @@
 import { API_URL, DASHBOARD_URL } from './lib/urls.js'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Landing from './pages/Landing'
+import { ContentProvider } from './content/store.jsx'
+import RouteHead from './content/RouteHead.jsx'
+const ContentHub = lazy(() => import('./content/ContentHub.jsx'))
+const PreviewPage = lazy(() => import('./content/PreviewPage.jsx'))
 
 const Legal      = lazy(() => import('./pages/Legal'))
-const BlogIndex  = lazy(() => import('./pages/BlogIndex'))
 const BlogPost   = lazy(() => import('./pages/BlogPost'))
 const SkillPage  = lazy(() => import('./seo/skills/SkillPage'))
 const ComparePage = lazy(() => import('./seo/compare/ComparePage'))
@@ -48,25 +51,29 @@ function ReferralAttribution() {
   return null
 }
 
-export default function App() {
+export function AppRoutes() {
   return (
-    <BrowserRouter>
+    <>
+      <RouteHead />
       <ReferralAttribution />
       <Suspense fallback={<div className="min-h-screen bg-cream" />}>
         <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/legal" element={<Legal />} />
-              <Route path="/blog" element={<BlogIndex />} />
+              <Route path="/blog" element={<ContentHub kind="blog" />} />
+              <Route path="/skills" element={<ContentHub kind="skill" />} />
+              <Route path="/for" element={<ContentHub kind="agent" />} />
+              <Route path="/preview/:slug" element={<PreviewPage />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/skills/:slug" element={<SkillPage />} />
-              <Route path="/compare" element={<HubPage kind="compare" />} />
+              <Route path="/compare" element={<ContentHub kind="compare" />} />
               <Route path="/compare/:slug" element={<ComparePage />} />
               <Route path="/for/:slug" element={<AgentPage />} />
-              <Route path="/alternatives" element={<HubPage kind="alternatives" />} />
+              <Route path="/alternatives" element={<ContentHub kind="alternatives" />} />
               <Route path="/alternatives/:slug" element={<AlternativesPage />} />
-              <Route path="/industry" element={<HubPage kind="industry" />} />
+              <Route path="/industry" element={<ContentHub kind="industry" />} />
               <Route path="/industry/:slug" element={<IndustryPage />} />
-              <Route path="/voice" element={<HubPage kind="voice" />} />
+              <Route path="/voice" element={<ContentHub kind="voice" />} />
               <Route path="/voice/:slug" element={<VoicePage />} />
               <Route path="/tools" element={<HubPage kind="tools" />} />
               <Route path="/tools/savings-calculator" element={<SavingsCalculator />} />
@@ -80,6 +87,20 @@ export default function App() {
           <Route path="/business/checkout/*" element={<DashboardRedirect />} />
         </Routes>
       </Suspense>
-    </BrowserRouter>
+    </>
   )
+}
+
+function BrowserContent() {
+  const location = useLocation()
+  const [initialLocation] = useState(location.key)
+  const [seed, setSeed] = useState(() => window.__GATHOS_CONTENT__ || {})
+  useEffect(() => {
+    if (location.key !== initialLocation) setSeed({})
+  }, [location.key, initialLocation])
+  // SSR data is for the initial navigation only; returning later fetches current publication state.
+  return <ContentProvider value={location.key === initialLocation ? seed : {}}><AppRoutes /></ContentProvider>
+}
+export default function App() {
+  return <BrowserRouter><BrowserContent /></BrowserRouter>
 }

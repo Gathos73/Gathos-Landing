@@ -15,7 +15,7 @@ const columns = [
       { label: 'APIs', href: '/#apis' },
       { label: 'Documentation', href: (DASHBOARD_URL + "/docs/") },
       { label: 'Video API', href: '/skills/text-to-video-api' },
-      { label: 'Skills', href: '/#skills' },
+      { label: 'Skills', href: '/skills' },
       { label: 'Pricing', href: '/#pricing' },
       { label: 'Sign in', href: (DASHBOARD_URL + "/login/") },
     ],

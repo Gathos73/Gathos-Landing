@@ -25,17 +25,53 @@ npm run preview
 
 ## Deployment
 
-Build from this directory and publish `dist/`. Configure the static host to serve
-`index.html` for frontend routes (including nested blog and SEO URLs). Route `/api/*`
-to the backend before the SPA fallback: newsletter, contact, dynamic content, and
-data-deletion status use these public endpoints. The frontend does not need the
-legacy `gathos/server` or Supabase/auth environment variables.
+`npm run build` produces the browser assets in `dist/` and the React server renderer
+in `dist-ssr/server/`. Deploy this project from **landing/** as the Vercel project
+root. The checked-in `vercel.json` routes nested URLs through `api/render.mjs` and
+`/sitemap.xml` through `api/sitemap.mjs`. Existing static assets are served directly.
+This fixes direct visits and reloads at `/blog`, `/blog/<slug>`, and SEO routes.
 
-Alternatively set `VITE_API_BASE_URL` to the public backend origin at build time
-and allow the landing origin in backend CORS. The Vite proxy is development-only;
-`npm run preview` also requires a reachable `VITE_API_BASE_URL` for API features.
-For an up-to-date sitemap including generated content, proxy `/sitemap.xml` to the
-backend; a static sitemap is included as a fallback.
+Set server-only `CONTENT_API_URL` to the FastAPI origin (for example
+`https://api.gathos.com`). It may point to a private origin reachable by the
+renderer. Set `VITE_API_BASE_URL` to the public browser-accessible API origin;
+the backend must allow the landing origin in CORS. These values must select the
+same content database. `VITE_SITE_URL` sets canonical public URLs at build time.
+Set backend `SITE_URL` to the same public origin, including for preview links.
+
+For self-hosting, run `npm start` after building. It starts `server.mjs` on
+`127.0.0.1:5173` (`PORT` and `HOST` override this). Keep the Node process behind
+your HTTPS reverse proxy. Deploying only `dist/` omits server rendering and HTTP
+status handling. Vite development and `npm run preview` remain browser-only;
+use the production server when checking SEO or direct URL behavior.
+
+The content API owns every article and SEO detail URL. Listing requests are
+paginated; article requests fetch one slug. The server sends the article body,
+canonical metadata, social tags, and JSON-LD in the initial HTML. Missing pages
+return HTTP 404; backend failures return uncached HTTP 503. Publishing and
+archiving become visible within the public cache's maximum 60-second lifetime.
+Changed published slugs permanently redirect to their current URL.
+
+Draft preview links expire after five minutes, are tied to a saved revision,
+and return `noindex` and `no-store`. They are bearer links: only share them with
+reviewers. Editing the saved draft invalidates earlier preview links.
+
+The backend bundles the original 78 articles and imports missing records on
+startup without overwriting existing drafts, edits, archives, or renamed URLs.
+The old source catalogs are retained as export inputs; they no longer override
+database content. `npm run export:editorial` explicitly refreshes the backend's
+packaged catalog from these sources. Review its changes before deploying; it
+is not part of the normal build. The backend package must include
+`app/resources/editorial/`.
+
+Run `npm run test:editorial` after building to verify initial HTML, metadata,
+all migrated article templates, pagination, redirects, and HTTP failure behavior.
+The test inventory reads the sibling backend catalog; production does not need
+any sibling frontend or backend checkout.
+
+Vercel function configuration follows the official
+[Vite deployment](https://vercel.com/docs/frameworks/frontend/vite) and
+[function packaging](https://vercel.com/docs/project-configuration/vercel-json)
+documentation.
 
 Public images, posters, audio, and videos use `https://assets.vividai.in` by
 default, preserving paths such as `/showcase/usecases/videos/final_podcast.mp4`.
