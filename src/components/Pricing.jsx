@@ -1,6 +1,7 @@
 import { DASHBOARD_URL } from '../lib/urls.js'
 import { publicFetch } from '../lib/public-api.js'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { loadPublicPlans } from '../lib/plan-catalog.js'
 import SectionHeader from './SectionHeader'
 import RevealOnScroll from './RevealOnScroll'
 import Button from './Button'
@@ -83,7 +84,68 @@ function BusinessCard() {
   )
 }
 
+function PlanCard({ plan, windowHours }) {
+  const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: plan.currency })
+  const price = plan.display_price_label || formatter.format(
+    plan.price_minor / 10 ** (formatter.resolvedOptions().maximumFractionDigits ?? 2),
+  )
+  const cadence = plan.billing_label || ({
+    none: 'one-time payment', month: '/month', quarter: '/quarter', year: '/year',
+  }[plan.billing_interval] || plan.billing_interval)
+  const requestLimit = plan.fixed_window_limit
+  const features = [
+    ...(requestLimit === null ? [] : [`${requestLimit.toLocaleString()} requests per ${windowHours}-hour window`]),
+    ...(plan.concurrency_limit === null ? [] : [`${plan.concurrency_limit} concurrent requests`]),
+    ...(plan.priority_support ? ['Priority support'] : []),
+  ]
+
+  return (
+    <article className="h-full rounded-clay-feature bg-white border-2 border-black/90 shadow-clay p-8 flex flex-col">
+      <h3 className="text-2xl font-semibold tracking-tight text-black">{plan.display_name}</h3>
+      <div className="flex flex-wrap items-baseline gap-2 mt-4">
+        <span className="text-4xl font-semibold tracking-tightest text-black">{price}</span>
+        <span className="text-sm text-warm-silver">{cadence}</span>
+      </div>
+      {plan.description && <p className="text-sm text-warm-charcoal mt-3">{plan.description}</p>}
+      <ul className="space-y-2 my-6 text-sm text-warm-charcoal">
+        {features.map((feature) => <li key={feature}>{feature}</li>)}
+      </ul>
+      {plan.products.length > 0 && (
+        <details className="mb-6 text-sm text-warm-charcoal">
+          <summary className="cursor-pointer font-semibold">Included services &amp; limits</summary>
+          <ul className="mt-3 space-y-2">
+            {plan.products.map((product) => (
+              <li key={product.code}>
+                {product.name}{product.fixed_window_limit === null
+                  ? ''
+                  : ` · ${product.fixed_window_limit.toLocaleString()} requests / ${windowHours} hours`}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      <Button href={DASHBOARD_URL + '/login?plan=' + encodeURIComponent(plan.code)} className="w-full mt-auto">
+        Choose {plan.display_name}
+      </Button>
+    </article>
+  )
+}
+
 export default function Pricing() {
+  const [catalog, setCatalog] = useState(null)
+  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    setError('')
+    void loadPublicPlans().then((result) => {
+      if (active) setCatalog(result)
+    }).catch(() => {
+      if (active) setError('Plans could not be loaded. Please try again.')
+    })
+    return () => { active = false }
+  }, [attempt])
 
   return (
     <section id="pricing" className="py-24 md:py-32 bg-oat-50/50 border-y border-oat">
@@ -91,167 +153,32 @@ export default function Pricing() {
         <SectionHeader
           center
           eyebrow="Pricing"
-          title={<>Stop paying per pixel.<br/><span className="italic text-ube-800">Stop paying per syllable.</span></>}
-          subtitle="Start with a 7-day no-card trial for image + TTS. Creator adds image-to-image editing and video, with a 3-day Creator trial after Dodo mandate and limited-time $45/mo pricing if you keep it. No credits, no per-image fees; fair-use windows keep queues stable."
+          title={<>Choose your plan.<br/><span className="italic text-ube-800">Make room to create.</span></>}
+          subtitle="Compare generation limits and included services. Usage resets on fixed windows."
         />
-
-        {/* 3-card grid. Identical content structure across all three:
-              eyebrow → price/title → tagline → bullets → value chip → CTA
-            All cards share the same flex-column rhythm so item-stretch
-            produces a clean shared baseline. Creator gets the Clay-style
-            ube-800 (lighter than ube-900) background + a top accent strip
-            instead of an inflated scale — physical-toy depth comes from
-            the offset Clay shadow on hover, not a transform. */}
-        <div className="grid lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-stretch">
-
-          {/* ─── Pro $18 — entry / anchor (LEFT) ─────────────────────────── */}
-          <RevealOnScroll className="h-full">
-            <div className="relative h-full rounded-clay-feature bg-white border-2 border-black/90 shadow-clay p-8 flex flex-col">
-              <div className="absolute top-6 right-6 px-2.5 py-1 rounded text-[0.62rem] font-bold uppercase tracking-[0.12em] bg-lemon-400 text-lemon-800">
-                7-day free trial
-              </div>
-
-              <div className="mb-7">
-                <div className="label-clay text-warm-silver mb-3">Pro</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[3.5rem] font-semibold tracking-tightest leading-none text-black">$18</span>
-                  <span className="text-sm text-warm-silver">/month</span>
-                </div>
-                <div className="mt-2 text-[0.88rem] text-warm-charcoal">
-                  Unlimited image &amp; TTS. <span className="text-warm-silver">Cancel anytime.</span>
-                </div>
-              </div>
-
-              <ul className="space-y-2.5 mb-6">
-                {[
-                  'Unlimited image generations',
-                  'Pixel-perfect long text in images',
-                  'Unlimited TTS · 600+ languages',
-                  'Zero-shot voice cloning',
-                  'Full REST API + agent skills',
-                ].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-[0.88rem] text-warm-charcoal">
-                    <svg className="flex-shrink-0 mt-0.5 text-matcha-600" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Value chip — mirrors the Creator chip's structure so the two
-                  cards share a visual rhythm. Filled-out emptiness wasn't the
-                  problem — content imbalance was. */}
-              <div className="mt-auto p-3.5 rounded-xl bg-cream border border-dashed border-oat flex items-start gap-2 mb-5">
-                <span className="text-lg flex-shrink-0">⚡</span>
-                <div className="text-[0.78rem] text-warm-charcoal leading-relaxed">
-                  Replaces Nano Banana Pro + ElevenLabs — <span className="text-matcha-600 font-semibold">save $150–$220/mo</span> at equivalent usage.
-                </div>
-              </div>
-
-              <button
-                href={(DASHBOARD_URL + "/login/")}
-                className="w-full h-11 inline-flex items-center justify-center gap-1.5 rounded-pill bg-white border-2 border-black text-black text-[0.92rem] font-semibold clay-hover"
-              >
-                Start free
-              </button>
-            </div>
-          </RevealOnScroll>
-
-          {/* ─── Creator $45 — RECOMMENDED (MIDDLE) ──────────────────────── */}
-          <RevealOnScroll delay={0.06} className="h-full">
-            <div
-              id="pro_plus"
-              className="relative h-full rounded-clay-feature bg-[#1a0a3d] text-white border-2 border-black shadow-clay p-8 flex flex-col overflow-hidden"
-            >
-              {/* Subtle inner highlight along the top edge — Clay's signature
-                  inset-highlight shadow approach. Single tone (matcha at low
-                  alpha), respects the rounded corners since it lives inside
-                  the card's overflow-hidden bounds, not as a separate strip. */}
-              <div className="absolute top-0 left-0 right-0 h-px bg-matcha-300/30" />
-
-              <div className="absolute top-6 right-6 px-2.5 py-1 rounded text-[0.62rem] font-bold uppercase tracking-[0.12em] bg-matcha-300 text-matcha-800">
-                Limited-time
-              </div>
-
-              <div className="mb-7">
-                <div className="label-clay text-ube-300 mb-3">Creator</div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[3.75rem] font-semibold tracking-tightest leading-none">$45</span>
-                  <span className="text-sm text-ube-300">/month</span>
-                </div>
-                <div className="mt-2 text-[0.92rem] text-white">
-                  Image editing + video <span className="text-ube-300">then limited-time $45/mo for full creative automation.</span>
-                </div>
-              </div>
-
-              <ul className="space-y-2.5 mb-6">
-                {[
-                  'Dedicated image-to-image editing API',
-                  'Edit, combine, restyle, and refine source images',
-                  'Unlimited text-to-video and image-to-video generation',
-                  'Generated audio controls for video workflows',
-                  'Unlimited AI image generation',
-                  'Unlimited voice cloning and text-to-speech',
-                  'Dedicated i2i_live and vid_live API keys',
-                  'Automated agent workflows',
-                  'Agent skills for repeat creative tasks',
-                  'One platform for image editing, video, image, voice, and AI automation',
-                ].map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-[0.9rem] text-white leading-snug">
-                    <svg className="flex-shrink-0 mt-0.5 text-matcha-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto p-3.5 rounded-xl bg-white/[0.06] border border-dashed border-white/20 flex items-start gap-2 mb-5">
-                <span className="text-lg flex-shrink-0">⚡</span>
-                <div className="text-[0.78rem] text-ube-300 leading-relaxed">
-                  Replace separate image editors, Veo 3, Seedance, ElevenLabs, Higgsfield, Gemini, image generators, voice tools, and agent workflow apps — <span className="text-matcha-300 font-semibold">all in one creator platform.</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  href={(DASHBOARD_URL + "/login/")}
-                  className="w-full h-12 inline-flex items-center justify-center gap-1.5 rounded-pill bg-matcha-300 text-matcha-800 text-[0.95rem] font-bold clay-hover"
-                >
-                  Start Creator trial
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 5l7 7-7 7" /></svg>
-                </button>
-                <button
-                  href={(DASHBOARD_URL + "/login/")}
-                  className="w-full h-10 inline-flex items-center justify-center rounded-pill border border-white/25 bg-white/10 text-white text-[0.86rem] font-semibold hover:bg-white/15 transition-colors"
-                >
-                  Subscribe now — limited-time $45/mo
-                </button>
-              </div>
-            </div>
-          </RevealOnScroll>
-
-          {/* ─── Enterprise — right ──────────────────────────────────────── */}
-          <RevealOnScroll delay={0.12} className="h-full">
-            <div className="h-full"><BusinessCard /></div>
-          </RevealOnScroll>
-        </div>
-
-        <RevealOnScroll delay={0.15}>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-10">
-            {[
-              { service: 'Nano Banana Pro · 1,000 images', cost: '$134–$240', kind: 'out', detail: 'Metered by Gemini API ($0.134–$0.24/img)' },
-              { service: 'Gathos · 1,000 images',           cost: '$18/mo',    kind: 'us',  detail: 'Unlimited. Generate 10,000 if you want.' },
-              { service: 'ElevenLabs TTS + Cloning',        cost: '$22–$99',   kind: 'out', detail: 'Metered by character · 70+ languages' },
-              { service: 'Gathos TTS + Cloning',            cost: '$18/mo',    kind: 'us',  detail: 'Unlimited · zero-shot · 600+ languages' },
-              { service: 'Veo 3 / Seedance video stack',        cost: 'Usage-based', kind: 'out', detail: 'Separate video API, plus separate image and voice tools' },
-              { service: 'Gathos Creator · image editing + video', cost: '$45/mo', kind: 'us', detail: 'Limited-time Creator pricing · i2i + video + Pro APIs' },
-            ].map((c) => (
-              <div key={c.service} className={`p-5 rounded-[24px] border-2 text-center ${c.kind === 'us' ? 'bg-white border-matcha-600' : 'bg-white border-black/90'}`}>
-                <div className="label-clay text-warm-silver mb-2">{c.service}</div>
-                <div className={`text-2xl font-semibold tracking-[-0.02em] ${c.kind === 'us' ? 'text-matcha-600' : 'text-pomegranate-400'}`}>{c.cost}</div>
-                <div className="text-[0.72rem] text-warm-silver mt-1">{c.detail}</div>
-              </div>
-            ))}
+        {error ? (
+          <div role="alert" className="text-center mb-6">
+            <p>{error}</p>
+            <Button onClick={() => setAttempt((value) => value + 1)} className="mt-3">Try again</Button>
           </div>
-        </RevealOnScroll>
+        ) : !catalog ? (
+          <p role="status" className="text-center">Loading plans…</p>
+        ) : catalog.plans.length === 0 ? (
+          <p className="text-center">No public plans are currently available.</p>
+        ) : (
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+              {catalog.plans.map((plan) => (
+                <PlanCard key={plan.code} plan={plan} windowHours={catalog.window_seconds / 3600} />
+              ))}
+            </div>
+            <p className="text-center text-sm text-warm-silver mt-6">
+              Request limits reset every {catalog.window_seconds / 3600} hours on a fixed UTC schedule.
+              Applicable taxes are shown at checkout.
+            </p>
+          </>
+        )}
+        <div className="mt-10 max-w-3xl mx-auto"><BusinessCard /></div>
       </div>
     </section>
   )
