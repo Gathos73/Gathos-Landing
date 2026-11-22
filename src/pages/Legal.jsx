@@ -276,7 +276,7 @@ function FAQPage() {
     },
     {
       q: 'How does the free trial work?',
-      a: 'When you sign up, you get a 7-day trial with up to 20 generations per day (image + TTS combined), capped at 140 total over the week. Same 6-hour burst window and concurrency limit as the paid plan. You can create 1 image key and 1 TTS key during the trial. No credit card required.',
+      a: 'Every new account gets 5 free generations per product with no expiry and no card required. Your first recurring subscription also includes a 7-day trial after adding a payment method through Dodo Payments; billing starts after those 7 days unless cancelled.',
     },
     {
       q: 'How much does the Pro plan cost?',
@@ -300,7 +300,7 @@ function FAQPage() {
     },
     {
       q: 'What are the usage limits?',
-      a: 'Pro users get unlimited daily generations with a 6-hour fair-use window of 75 calls (~12.5/hour sustained). The window cap exists to prevent runaway scripts from overloading shared GPU capacity, not to throttle real usage. Trial users get up to 20 calls/day combined (image + TTS) capped at 140 total across the 7-day trial. Limits reset automatically and an admin can adjust limits per user.',
+      a: 'Pro users get unlimited daily generations with a 6-hour fair-use window of 75 calls (~12.5/hour sustained). The window cap exists to prevent runaway scripts from overloading shared GPU capacity, not to throttle real usage. New accounts get 5 free generations per product with no expiry. The free allowance never resets and ends permanently when subscription access starts. Limits reset automatically and an admin can adjust limits per user.',
     },
     {
       q: 'Can I cancel my subscription?',

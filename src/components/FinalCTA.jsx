@@ -103,7 +103,7 @@ export default function FinalCTA() {
               Read the docs
             </a>
           </div>
-          <p className="mt-5 text-xs text-white/55">No credit card - cancel anytime</p>
+          <p className="mt-5 text-xs text-white/55">5 free generations per product · No expiry · No card required</p>
         </div>
       </div>
     </section>
