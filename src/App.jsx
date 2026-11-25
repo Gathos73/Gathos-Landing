@@ -20,6 +20,7 @@ const PricingTracker = lazy(() => import('./seo/tools/PricingTracker'))
 const HubPage = lazy(() => import('./seo/hub/HubPage'))
 const DataDeletion = lazy(() => import('./pages/DataDeletion'))
 const DataDeletionStatus = lazy(() => import('./pages/DataDeletion').then(m => ({ default: m.DataDeletionStatus })))
+const DesktopLogin = lazy(() => import('./pages/DesktopLogin'))
 const NotFound   = lazy(() => import('./pages/NotFound'))
 
 function DashboardRedirect() {
@@ -80,6 +81,7 @@ export function AppRoutes() {
               <Route path="/tools/ai-pricing-tracker" element={<PricingTracker />} />
               <Route path="/data-deletion" element={<DataDeletion />} />
               <Route path="/data-deletion/status" element={<DataDeletionStatus />} />
+              <Route path="/desktop-login" element={<DesktopLogin />} />
               <Route path="*" element={<NotFound />} />
           <Route path="/login/*" element={<DashboardRedirect />} />
           <Route path="/signup/*" element={<DashboardRedirect />} />

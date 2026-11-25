@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { render, metadataFor, applyHead, serialize, PREFIX_KIND, API_URL } from '../dist-ssr/server/entry-server.js'
 const template = readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
 const paths = { blog: 'blog', compare: 'compare', skill: 'skills', agent: 'for', alternatives: 'alternatives', industry: 'industry', voice: 'voice' }
-const nonContent = new Set(['/', '/legal', '/tools', '/tools/savings-calculator', '/tools/ai-pricing-tracker', '/data-deletion', '/data-deletion/status'])
+const nonContent = new Set(['/', '/legal', '/tools', '/tools/savings-calculator', '/tools/ai-pricing-tracker', '/data-deletion', '/data-deletion/status', '/desktop-login'])
 function apiBase() {
   const base = process.env.CONTENT_API_URL || API_URL
   const url = new URL(base)
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
     const markup = await render(renderPath, seed)
     const html = applyHead(await template, metadataFor(path, seed, status))
       .replace('<div id="root"></div>', `<div id="root">${markup}</div><script>window.__GATHOS_CONTENT__=${serialize(seed)}</script>`)
-    const privatePage = pathname.startsWith('/preview/')
+    const privatePage = pathname.startsWith('/preview/') || pathname === '/desktop-login'
     res.writeHead(status, {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': privatePage || status !== 200 ? 'private, no-store' : 'public, max-age=0, s-maxage=60, must-revalidate',

@@ -19,6 +19,7 @@ export function metadataFor(path, seed, status = 200) {
   const schemas = []
   if (status === 404) { title = 'Page not found · Gathos'; description = 'The page you were looking for does not exist.' }
   else if (status === 503) { title = 'Content temporarily unavailable · Gathos'; description = 'Please try again shortly.' }
+  else if (url.pathname === '/desktop-login') { title = 'Continue to Gathos Desktop · Gathos'; description = 'Securely connect your Gathos browser session to Gathos Desktop.' }
   else if (item && cfg) {
     title = kind === 'blog' ? `${item.seoTitle || item.title} · Gathos Blog` : item.metaTitle || `${item.h1} · Gathos`
     description = item.metaDescription || item.metaDesc || item.summary || description
@@ -46,7 +47,7 @@ export function metadataFor(path, seed, status = 200) {
     description = 'Tools for estimating and comparing AI image, voice, and video API costs.'
     schemas.push(softwareApplicationLd({ description, url: canonical }), breadcrumbLd([{ name: 'Home', url: SITE_URL }, { name: 'Tools', url: `${SITE_URL}/tools` }]))
   }
-  return { title, description, image, canonical, schemas, type: kind === 'blog' && item ? 'article' : 'website', robots: seed.preview || status !== 200 ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' }
+  return { title, description, image, canonical, schemas, type: kind === 'blog' && item ? 'article' : 'website', robots: seed.preview || status !== 200 || url.pathname === '/desktop-login' ? 'noindex, nofollow' : 'index, follow, max-image-preview:large' }
 }
 export function serialize(value) { return JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029') }
 export function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) }
