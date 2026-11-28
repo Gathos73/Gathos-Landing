@@ -1,6 +1,6 @@
 // Vercel function and self-hosted adapter. No legacy frontend/server required.
 import { readFile } from 'node:fs/promises'
-import { render, metadataFor, applyHead, serialize, PREFIX_KIND, API_URL } from '../dist-ssr/server/entry-server.js'
+import { render, metadataFor, applyHead, serialize, PREFIX_KIND, API_URL, DASHBOARD_URL, dashboardDesktopLoginUrl } from '../dist-ssr/server/entry-server.js'
 const template = readFile(new URL('../dist/index.html', import.meta.url), 'utf8')
 const paths = { blog: 'blog', compare: 'compare', skill: 'skills', agent: 'for', alternatives: 'alternatives', industry: 'industry', voice: 'voice' }
 const nonContent = new Set(['/', '/legal', '/tools', '/tools/savings-calculator', '/tools/ai-pricing-tracker', '/data-deletion', '/data-deletion/status', '/desktop-login'])
@@ -72,6 +72,12 @@ export default async function handler(req, res) {
     requestUrl.searchParams.delete('path')
     const pathname = rawPath !== null ? `/${rawPath.replace(/^\/+/, '')}` : requestUrl.pathname
     const path = pathname + requestUrl.search
+    if (pathname === '/desktop-login') {
+      const location = dashboardDesktopLoginUrl(requestUrl.search, DASHBOARD_URL)
+      res.writeHead(307, { location, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' })
+      res.end()
+      return
+    }
     if (/^\/(login|signup|dashboard|business\/checkout)(\/|$)/.test(pathname)) {
       const target = process.env.DASHBOARD_URL || 'https://dashboard.gathos.com'
       res.writeHead(308, { location: `${target.replace(/\/$/, '')}/login/` }); res.end(); return

@@ -5,7 +5,8 @@ import { StrictMode } from 'react'
 import { AppRoutes } from './App.jsx'
 import { ContentProvider } from './content/store.jsx'
 export { metadataFor, applyHead, serialize, PREFIX_KIND } from './content/metadata.js'
-export { API_URL, SITE_URL } from './lib/urls.js'
+export { API_URL, DASHBOARD_URL, SITE_URL } from './lib/urls.js'
+export { dashboardDesktopLoginUrl } from './lib/desktop-auth.js'
 export function render(path, seed) {
   return new Promise((resolve, reject) => {
     const output = new PassThrough()

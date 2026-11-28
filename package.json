@@ -11,7 +11,8 @@
     "check:assets": "node scripts/check-showcase-assets.mjs",
     "start": "node server.mjs",
     "export:editorial": "node scripts/export-editorial.mjs",
-    "test:editorial": "node --test tests/editorial.test.mjs"
+    "test:editorial": "node --test tests/editorial.test.mjs",
+    "test:desktop": "node --test tests/desktop-auth.test.mjs tests/desktop-redirect.test.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
